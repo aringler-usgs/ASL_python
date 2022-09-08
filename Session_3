@@ -2,3 +2,52 @@ Grab the GLAD code:
 git clone https://github.com/caiociardelli/gladm25.git
 Move into the directory and untar and make (see directions)
 run session3.py
+
+Paper link: https://academic.oup.com/gji/article/223/1/1/5841525
+
+#!/usr/bin/env python
+import os 
+import numpy as np
+import matplotlib.pyplot as plt
+from obspy.core import UTCDateTime
+from obspy.clients.fdsn import Client
+client = Client("IRIS")
+
+mdep = 900.3
+stime = UTCDateTime('2022-001T00:00:00')
+
+inv = client.get_stations(network='IC', station='*',
+                          starttime=stime, endtime=stime+1, 
+                          location='00', channel='VHZ')
+
+stas, lats, lons = [], [], []
+for net in inv:
+    for sta in net:
+        stas.append(sta.code)
+        lats.append(sta.latitude)
+        lons.append(sta.longitude)
+
+fig = plt.figure(1, figsize=(12,12))
+depths = np.linspace(0,mdep, 200)
+for trip in zip(stas, lats, lons):
+    sta, lat, lon = trip
+    f = open('datafile','w')
+    for depth in depths:
+        f.write(str(lat) + ' ' + str(lon) + ' ' + str(depth) + '\n')
+    f.close()
+    for idx, var in enumerate(['rho', 'vsv', 'vph']):
+        result = os.popen('./bin/bkmns2path ' + var + ' datafile 40').read()
+        result = np.float_(result.split('\n')[:-1])
+        plt.subplot(1,3,idx+1)
+        plt.plot(result, depths, label=sta)
+
+hands = ['Density (rho)', 'Velocity Vs (km/s)', 'Velocity Vp (km/s)']
+for idx, hand in enumerate(hands):
+    plt.subplot(1,3,1+idx)
+    plt.gca().invert_yaxis()
+    plt.ylabel('Depth (km)')
+    plt.xlabel(hand)
+    plt.legend()
+plt.savefig('Depth_stations.PNG', format='PNG')
+
+
