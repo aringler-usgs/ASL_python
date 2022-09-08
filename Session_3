@@ -1,0 +1,4 @@
+Grab the GLAD code:
+git clone https://github.com/caiociardelli/gladm25.git
+Move into the directory and untar and make (see directions)
+run session3.py
